@@ -1,0 +1,66 @@
+---
+title: "p8105_hw2_rl3328"
+author: "Ruixi Li"
+date: "2023-09-28"
+output: html_document
+---
+
+# import and clean data
+```{r setup, message=FALSE}
+library(tidyverse)
+library(readr)
+```
+
+
+# Problem 1
+
+First, clean the data in pols-month.csv. Use separate() to break up the variable mon into integer variables year, month, and day; replace month number with month name; create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
+```{r}
+pols = 
+  read_csv("./fivethirtyeight_datasets/fivethirtyeight_datasets/pols-month.csv") |>
+  janitor::clean_names() |>#this step can be ignored cuz the variable names are clean
+  separate(
+    col = mon, 
+    into = c("year","month","day"), 
+    sep = "-") |>#I used `remove = FALSE` to check if I have done it correctly(not shown)
+  mutate(month = tolower(month.abb[as.numeric(month)]))|>#I assume month name is abbreviation
+  mutate(
+    president = 
+      ifelse(prez_dem == 1, rowSums(pols[,9:11]), rowSums(pols[,5:7]))) |>
+  select(-c("prez_gop","prez_dem","day"))
+
+```
+I cannot run the whole chunk at one time
+
+Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
+
+```{r}
+snp = 
+  read_csv("./fivethirtyeight_datasets/fivethirtyeight_datasets/snp.csv") |>
+  janitor::clean_names() |>#this step can be ignored cuz the variable names are clean
+  mutate(date = mdy(date)) |>
+  separate(
+    col = date, 
+    into = c("year","month","day"), 
+    sep = "-") |>#I used `remove = FALSE` to check if I have done it correctly(not shown)
+  mutate(month = tolower(month.abb[as.numeric(month)])) |>
+  select(-"day")
+```
+
+Third, tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
+
+```{r}
+unemployment = 
+  read_csv("./fivethirtyeight_datasets/fivethirtyeight_datasets/unemployment.csv") |>
+  janitor::clean_names() |>
+  pivot_longer(
+    -year,
+    names_to = "month", 
+    values_to = "unemployment")  
+```
+
+
+# Problem 2
+
+# Problem 3
+
