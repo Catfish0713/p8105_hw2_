@@ -110,10 +110,10 @@ str(mr)
 summary(mr)
 
 ```
-there's one `NA` in `dumpster` variable, one `NA` in `date` variable and  61 `NAs` in `homes_powered` variable.
+* there's one `NA` in `dumpster` variable, one `NA` in `date` variable and  61 `NAs` in `homes_powered` variable.
+* I don't like the input file name with space, so I changed the name of it.
 
-
-delete this row whose dumpster is `NA`
+* delete this row whose dumpster is `NA`
 
 ```{r}
 mr = drop_na(mr, dumpster)
@@ -128,7 +128,7 @@ mr = drop_na(mr, dumpster)
 mr = mr |> mutate(homes_powered = (weight_tons*500)/30,
                   trash_wheel_name = "Mr.Trash Wheel")
 ```
-
+I can integrate the seperated codes into one using pipeline, but I am showing my process of thinking.
 
 ## import and clean Professor Trash Wheel and Gwynnda
 
@@ -160,6 +160,7 @@ str(gwy)
 summary(gwy)
 ```
 
+
 ## combine them together
 
 ```{r}
@@ -178,4 +179,54 @@ Let's talk about the Mr. Trash Wheel datasets. The `mr` data has `r nrow(mr)` ob
 
 
 # Problem 3
+
+## import and clean baseline
+
+```{r baseline_check, include=FALSE}
+baseline = read_csv("./data_mci/MCI_baseline.csv",col_names = FALSE) |>
+  slice(-c(1,2)) |>
+  magrittr::set_colnames(c("ID","current_age","sex","education","apoe4","age_at_onset")) |>
+  janitor::clean_names() |>
+  mutate(
+    apoe4_labled = recode(apoe4, "1" = "APOE4 carrier","0" = "APOE4 non-carrier"),
+    sex_labled = recode(sex, "1" = "Male", "0" = "Female"))
+
+
+table(baseline$apoe4,baseline$apoe4_labled)
+table(baseline$sex,baseline$sex_labled)
+
+```
+
+```{r}
+baseline = read_csv("./data_mci/MCI_baseline.csv",col_names = FALSE) |>
+  slice(-c(1,2)) |>
+  magrittr::set_colnames(c("ID","current_age","sex","education","apoe4","age_at_onset")) |>
+  janitor::clean_names() |>
+  mutate(
+    apoe4 = recode(apoe4, "1" = "APOE4 carrier","0" = "APOE4 non-carrier"),
+    sex = recode(sex, "1" = "Male", "0" = "Female"),
+    current_age = as.numeric(current_age),
+    age_at_onset = ifelse(age_at_onset == ".", NA, age_at_onset),
+    age_at_onset = as.numeric(age_at_onset)) |>
+  filter(current_age>age_at_onset | is.na(age_at_onset))
+
+str(baseline)
+summary(baseline)
+baseline$age_at_onset
+```
+* When importing `baseline` data, I first drop the first row of the dataset(after memorizing the decoding rules) and then used the second row as column names. After cleaning the column names, I recoded `sex` and `apoe4`. Since `current_age` and `age_at_onset` are all character type in the original file. I converted them as numeric before comparing them to identify not MCI-free subjects at baseline and replace "." with `na`in age_at_onset.
+* The `baseline` data has `r nrow(baseline)` observations and `r ncol(baseline)` variables and tells us about the demographic features at baseline(sex, current_age,apoe4 status, education and MCI status during follow-up). 
+* `r nrow(baseline)` participants were recruited, and of these `r baseline |> filter(!is.na(age_at_onset)) |> nrow()` develop MCI? What is the average baseline age? What proportion of women in the study are APOE4 carriers?
+
+```{r}
+amyloid = read_csv("./data_mci/mci_amyloid.csv",col_names = FALSE) |>
+  slice(-c(1,2)) |>
+  magrittr::set_colnames(c("ID","abeta_40/42_bsl","abeta_40/42_2","abeta_40/42_4","abeta_40/42_6","abeta_40/42_8")) |>
+  janitor::clean_names() |>
+  mutate_at(c(2:6), as.numeric)
+  
+  
+str(amyloid)
+summary(amyloid)
+```
 

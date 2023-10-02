@@ -504,10 +504,14 @@ results =
 ##  3rd Qu.:  1378   3rd Qu.:  1982   3rd Qu.:  18.0   3rd Qu.:   59.33  
 ##  Max.   :528146   Max.   :775969   Max.   :6879.0   Max.   :22344.00  
 ##                                                     NA&#39;s   :61</code></pre>
-<p>there’s one <code>NA</code> in <code>dumpster</code> variable, one
-<code>NA</code> in <code>date</code> variable and 61 <code>NAs</code> in
-<code>homes_powered</code> variable.</p>
-<p>delete this row whose dumpster is <code>NA</code></p>
+<ul>
+<li><p>there’s one <code>NA</code> in <code>dumpster</code> variable,
+one <code>NA</code> in <code>date</code> variable and 61
+<code>NAs</code> in <code>homes_powered</code> variable.</p></li>
+<li><p>I don’t like the input file name with space, so I changed the
+name of it.</p></li>
+<li><p>delete this row whose dumpster is <code>NA</code></p></li>
+</ul>
 <pre class="r"><code>mr = drop_na(mr, dumpster)</code></pre>
 <ul>
 <li><p>calculate homes powered</p></li>
@@ -517,6 +521,8 @@ average household will use 30 kilowatts per day.</p></li>
 </ul>
 <pre class="r"><code>mr = mr |&gt; mutate(homes_powered = (weight_tons*500)/30,
                   trash_wheel_name = &quot;Mr.Trash Wheel&quot;)</code></pre>
+<p>I can integrate the seperated codes into one using pipeline, but I am
+showing my process of thinking.</p>
 </div>
 <div id="import-and-clean-professor-trash-wheel-and-gwynnda" class="section level2">
 <h2>import and clean Professor Trash Wheel and Gwynnda</h2>
@@ -665,6 +671,139 @@ collected by Gwynnda in July of 2021 was 1.63^{4}</strong>.</p>
 </div>
 <div id="problem-3" class="section level1">
 <h1>Problem 3</h1>
+<div id="import-and-clean-baseline" class="section level2">
+<h2>import and clean baseline</h2>
+<pre class="r"><code>baseline = read_csv(&quot;./data_mci/MCI_baseline.csv&quot;,col_names = FALSE) |&gt;
+  slice(-c(1,2)) |&gt;
+  magrittr::set_colnames(c(&quot;ID&quot;,&quot;current_age&quot;,&quot;sex&quot;,&quot;education&quot;,&quot;apoe4&quot;,&quot;age_at_onset&quot;)) |&gt;
+  janitor::clean_names() |&gt;
+  mutate(
+    apoe4 = recode(apoe4, &quot;1&quot; = &quot;APOE4 carrier&quot;,&quot;0&quot; = &quot;APOE4 non-carrier&quot;),
+    sex = recode(sex, &quot;1&quot; = &quot;Male&quot;, &quot;0&quot; = &quot;Female&quot;),
+    current_age = as.numeric(current_age),
+    age_at_onset = ifelse(age_at_onset == &quot;.&quot;, NA, age_at_onset),
+    age_at_onset = as.numeric(age_at_onset)) |&gt;
+  filter(current_age&gt;age_at_onset | is.na(age_at_onset))</code></pre>
+<pre><code>## Rows: 485 Columns: 6
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (6): X1, X2, X3, X4, X5, X6
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>str(baseline)</code></pre>
+<pre><code>## tibble [389 × 6] (S3: tbl_df/tbl/data.frame)
+##  $ id          : chr [1:389] &quot;1&quot; &quot;2&quot; &quot;4&quot; &quot;6&quot; ...
+##  $ current_age : num [1:389] 63.1 65.6 69.8 62.5 67.2 66.7 64.1 69.5 66.2 68.4 ...
+##  $ sex         : chr [1:389] &quot;Female&quot; &quot;Female&quot; &quot;Female&quot; &quot;Male&quot; ...
+##  $ education   : chr [1:389] &quot;16&quot; &quot;20&quot; &quot;16&quot; &quot;16&quot; ...
+##  $ apoe4       : chr [1:389] &quot;APOE4 carrier&quot; &quot;APOE4 carrier&quot; &quot;APOE4 non-carrier&quot; &quot;APOE4 non-carrier&quot; ...
+##  $ age_at_onset: num [1:389] NA NA NA NA NA NA NA NA NA NA ...</code></pre>
+<pre class="r"><code>summary(baseline)</code></pre>
+<pre><code>##       id             current_age        sex             education        
+##  Length:389         Min.   :56.00   Length:389         Length:389        
+##  Class :character   1st Qu.:63.10   Class :character   Class :character  
+##  Mode  :character   Median :64.80   Mode  :character   Mode  :character  
+##                     Mean   :64.92                                        
+##                     3rd Qu.:66.80                                        
+##                     Max.   :72.90                                        
+##                                                                          
+##     apoe4            age_at_onset  
+##  Length:389         Min.   :62.50  
+##  Class :character   1st Qu.:65.40  
+##  Mode  :character   Median :68.30  
+##                     Mean   :67.00  
+##                     3rd Qu.:69.25  
+##                     Max.   :70.20  
+##                     NA&#39;s   :386</code></pre>
+<pre class="r"><code>baseline$age_at_onset</code></pre>
+<pre><code>##   [1]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+##  [16]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+##  [31]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+##  [46]   NA   NA   NA   NA   NA   NA   NA   NA 62.5   NA   NA   NA   NA   NA   NA
+##  [61]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+##  [76]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+##  [91]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [106]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [121]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [136]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [151]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [166]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [181]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [196]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [211]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [226]   NA   NA   NA   NA   NA   NA   NA   NA 68.3   NA   NA   NA   NA   NA   NA
+## [241]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [256]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [271]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [286]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [301]   NA   NA   NA 70.2   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [316]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [331]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [346]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [361]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## [376]   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA</code></pre>
+<ul>
+<li>When importing <code>baseline</code> data, I first drop the first
+row of the dataset(after memorizing the decoding rules) and then used
+the second row as column names. After cleaning the column names, I
+recoded <code>sex</code> and <code>apoe4</code>. Since
+<code>current_age</code> and <code>age_at_onset</code> are all character
+type in the original file. I converted them as numeric before comparing
+them to identify not MCI-free subjects at baseline and replace “.” with
+<code>na</code>in age_at_onset.</li>
+<li>The <code>baseline</code> data has 389 observations and 6 variables
+and tells us about the demographic features at baseline(sex,
+current_age,apoe4 status, education and MCI status during
+follow-up).</li>
+<li>389 participants were recruited, and of these 3 develop MCI? What is
+the average baseline age? What proportion of women in the study are
+APOE4 carriers?</li>
+</ul>
+<pre class="r"><code>amyloid = read_csv(&quot;./data_mci/mci_amyloid.csv&quot;,col_names = FALSE) |&gt;
+  slice(-c(1,2)) |&gt;
+  magrittr::set_colnames(c(&quot;ID&quot;,&quot;abeta_40/42_bsl&quot;,&quot;abeta_40/42_2&quot;,&quot;abeta_40/42_4&quot;,&quot;abeta_40/42_6&quot;,&quot;abeta_40/42_8&quot;)) |&gt;
+  janitor::clean_names() |&gt;
+  mutate_at(c(2:6), as.numeric)</code></pre>
+<pre><code>## Rows: 489 Columns: 6
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (6): X1, X2, X3, X4, X5, X6
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre><code>## Warning: There were 5 warnings in `mutate()`.
+## The first warning was:
+## ℹ In argument: `abeta_40_42_bsl = .Primitive(&quot;as.double&quot;)(abeta_40_42_bsl)`.
+## Caused by warning:
+## ! NAs introduced by coercion
+## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.</code></pre>
+<pre class="r"><code>str(amyloid)</code></pre>
+<pre><code>## tibble [487 × 6] (S3: tbl_df/tbl/data.frame)
+##  $ id             : chr [1:487] &quot;1&quot; &quot;2&quot; &quot;3&quot; &quot;4&quot; ...
+##  $ abeta_40_42_bsl: num [1:487] 0.111 0.107 0.106 0.109 0.108 ...
+##  $ abeta_40_42_2  : num [1:487] NA 0.109 0.109 0.109 0.112 ...
+##  $ abeta_40_42_4  : num [1:487] 0.109 0.109 0.106 0.111 0.115 ...
+##  $ abeta_40_42_6  : num [1:487] 0.105 0.106 NA 0.107 0.107 ...
+##  $ abeta_40_42_8  : num [1:487] 0.107 0.107 0.106 0.111 0.106 ...</code></pre>
+<pre class="r"><code>summary(amyloid)</code></pre>
+<pre><code>##       id            abeta_40_42_bsl  abeta_40_42_2    abeta_40_42_4  
+##  Length:487         Min.   :0.1015   Min.   :0.1025   Min.   :0.101  
+##  Class :character   1st Qu.:0.1090   1st Qu.:0.1083   1st Qu.:0.108  
+##  Mode  :character   Median :0.1111   Median :0.1105   Median :0.110  
+##                     Mean   :0.1110   Mean   :0.1103   Mean   :0.110  
+##                     3rd Qu.:0.1131   3rd Qu.:0.1122   3rd Qu.:0.112  
+##                     Max.   :0.1184   Max.   :0.1187   Max.   :0.118  
+##                     NA&#39;s   :2        NA&#39;s   :50       NA&#39;s   :43     
+##  abeta_40_42_6    abeta_40_42_8    
+##  Min.   :0.1005   Min.   :0.09938  
+##  1st Qu.:0.1069   1st Qu.:0.10615  
+##  Median :0.1089   Median :0.10842  
+##  Mean   :0.1089   Mean   :0.10824  
+##  3rd Qu.:0.1112   3rd Qu.:0.11045  
+##  Max.   :0.1180   Max.   :0.11586  
+##  NA&#39;s   :39       NA&#39;s   :38</code></pre>
+</div>
 </div>
 
 
