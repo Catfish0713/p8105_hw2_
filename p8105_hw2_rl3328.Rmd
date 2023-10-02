@@ -15,7 +15,7 @@ library(readxl)
 
 # Problem 1
 
-First, clean the data in pols-month.csv. Use separate() to break up the variable mon into integer variables year, month, and day; replace month number with month name; create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
+## import and clean pols-month
 ```{r}
 pols = 
   read_csv("./fivethirtyeight_datasets/fivethirtyeight_datasets/pols-month.csv") |>
@@ -33,8 +33,7 @@ pols =
 
 ```
 
-
-Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
+## import and clean snp
 
 ```{r error_but_, include=FALSE}
 #can use this approach if years are divided by 1968.
@@ -65,7 +64,7 @@ snp =
 ```
 
 
-Third, tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
+## import and clean unemployment
 
 ```{r}
 unemployment = 
@@ -77,6 +76,7 @@ unemployment =
     values_to = "unemployment")  
 ```
 
+## merge three datasets together
 Join the datasets by merging `snp`into `pols`, and merging `unemployment` into the result.
 
 ```{r merge}
@@ -94,10 +94,6 @@ results =
 
 ```
 
-check
-```{r}
-filter(results, month == "jan", as.numeric(year) >= 1975, president == "dem") |> pull(unemployment) |> mean() |> round(2)
-```
 
 # Problem 2
 
@@ -105,7 +101,9 @@ filter(results, month == "jan", as.numeric(year) >= 1975, president == "dem") |>
 ```{r}
 mr = read_excel("trash.xlsx", 1) |>
   janitor::clean_names() |>
-  select(-c(15,16))
+  select(-c(15,16)) |>
+  mutate(month = ifelse(month == "Decemeber","December",month),
+         sports_balls = round(sports_balls))
 
 str(mr)
 
@@ -121,13 +119,61 @@ delete this row whose dumpster is `NA`
 mr = drop_na(mr, dumpster)
 ```
 
-## calculate homes powered
+* calculate homes powered
 
 * according to `home powered note`, Homes Powered - Each ton of trash equates to on average 500 kilowatts of electricity.  An average household will use 30 kilowatts per day.
 
+
 ```{r}
-mr = mr |> mutate(homes_powered = (weight_tons*500)/30)
+mr = mr |> mutate(homes_powered = (weight_tons*500)/30,
+                  trash_wheel_name = "Mr.Trash Wheel")
 ```
+
+
+## import and clean Professor Trash Wheel and Gwynnda
+
+```{r}
+pro = read_excel("trash.xlsx", 2) |>
+  janitor::clean_names() |>
+  drop_na(dumpster) |>
+  mutate(homes_powered = (weight_tons*500)/30,
+         trash_wheel_name = "Professor Trash Wheel",
+         year = as.character(year))
+  
+
+str(pro)
+
+summary(pro)
+
+
+
+gwy = read_excel("trash.xlsx", 4) |>
+  janitor::clean_names() |>
+  drop_na(dumpster) |>
+  mutate(homes_powered = (weight_tons*500)/30,
+         trash_wheel_name = "Gwynnda Trash Wheel",
+         year = as.character(year),
+         month = ifelse(month == "july","July",month))
+
+
+str(gwy)
+summary(gwy)
+```
+
+## combine them together
+
+```{r}
+trash =  bind_rows(mr,gwy,pro)
+```
+
+
+
+```{r}
+trash |> group_by(month) |> summarise(sum_trash=sum(weight_tons),
+            .groups = 'drop')
+```
+
+Let's talk about the Mr. Trash Wheel datasets. The `mr` data has `r nrow(mr)` observations and `r ncol(mr)` variables and tells us about the amount of trash the trumpster receives(measured by both weight and volum), fill time and the categories of trash for "Mr. Trash Wheel" from years `r range(mr$year)[1]` to `r range(mr$year)[2]`. It also tells us how many homes can be powered by the electricity produced by trash incineration. The `pro` data has `r nrow(pro)` observations and `r ncol(pro)` variables, ranging from years `r range(pro$year)[1]` to `r range(pro$year)[2]`. The `gwy` data has `r nrow(gwy)` observations and `r ncol(gwy)` variables ranging from years `r range(gwy$year)[1]` to `r range(gwy$year)[2]`. Over these years, the **average trash weight(tons) in June was the most, which was `r filter(trash, month == "June") |> pull(weight_tons) |> mean() |> round(2)`**. The **average trash weight(tons) in January was the least, which was `r filter(trash, month == "January") |> pull(weight_tons) |> mean() |> round(2)`**.
 
 
 
