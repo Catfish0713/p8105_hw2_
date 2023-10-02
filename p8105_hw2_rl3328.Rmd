@@ -9,6 +9,7 @@ output: html_document
 ```{r setup, message=FALSE}
 library(tidyverse)
 library(readr)
+library(readxl)
 ```
 
 
@@ -99,6 +100,36 @@ filter(results, month == "jan", as.numeric(year) >= 1975, president == "dem") |>
 ```
 
 # Problem 2
+
+## import and clean mr. transh wheel
+```{r}
+mr = read_excel("trash.xlsx", 1) |>
+  janitor::clean_names() |>
+  select(-c(15,16))
+
+str(mr)
+
+summary(mr)
+
+```
+there's one `NA` in `dumpster` variable, one `NA` in `date` variable and  61 `NAs` in `homes_powered` variable.
+
+
+delete this row whose dumpster is `NA`
+
+```{r}
+mr = drop_na(mr, dumpster)
+```
+
+## calculate homes powered
+
+* according to `home powered note`, Homes Powered - Each ton of trash equates to on average 500 kilowatts of electricity.  An average household will use 30 kilowatts per day.
+
+```{r}
+mr = mr |> mutate(homes_powered = (weight_tons*500)/30)
+```
+
+
 
 # Problem 3
 
