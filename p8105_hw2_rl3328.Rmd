@@ -2,7 +2,7 @@
 title: "p8105_hw2_rl3328"
 author: "Ruixi Li"
 date: "2023-09-28"
-output: html_document
+output: github_document
 ---
 
 # import and clean data
@@ -16,7 +16,7 @@ library(readxl)
 # Problem 1
 
 ## import and clean pols-month
-```{r}
+```{r pols, message=FALSE}
 pols = 
   read_csv("./data/fivethirtyeight_datasets/fivethirtyeight_datasets/pols-month.csv") |>
   janitor::clean_names() |>#this step can be ignored cuz the variable names are clean
@@ -35,22 +35,8 @@ pols =
 
 ## import and clean snp
 
-```{r error_but_, include=FALSE}
-#can use this approach if years are divided by 1968.
-snp = 
-  read_csv("./data/fivethirtyeight_datasets/fivethirtyeight_datasets/snp.csv") |>
-  janitor::clean_names() |>#this step can be ignored cuz the variable names are clean
-  mutate(date = mdy(date)) |>
-  separate(
-    col = date, 
-    into = c("year","month","day"), 
-    sep = "-") |>#I used `remove = FALSE` to check if I have done it correctly(not shown)
-  mutate(month = tolower(month.abb[as.numeric(month)])) |>
-  select(-"day")
-```
-
 After knowing the range of years, I assign the date into correct century.
-```{r}
+```{r snp, message=FALSE}
 snp = 
   read_csv("./data/fivethirtyeight_datasets/fivethirtyeight_datasets/snp.csv") |>
   janitor::clean_names() |>#this step can be ignored cuz the variable names are clean
@@ -66,7 +52,7 @@ snp =
 
 ## import and clean unemployment
 
-```{r}
+```{r unemployment, message=FALSE}
 unemployment = 
   read_csv("./data/fivethirtyeight_datasets/fivethirtyeight_datasets/unemployment.csv") |>
   janitor::clean_names() |>
@@ -80,17 +66,13 @@ unemployment =
 Join the datasets by merging `snp`into `pols`, and merging `unemployment` into the result.
 
 ```{r merge}
-snp =
-  snp |> mutate(year = as.character(year))
+snp = snp |> mutate(year = as.character(year))
 
-results = 
-  left_join(pols, snp, by = c("year","month"))
+results = left_join(pols, snp, by = c("year","month"))
 
-unemployment =
-  unemployment |> mutate(year = as.character(year))
+unemployment = unemployment |> mutate(year = as.character(year))
 
-results = 
-  left_join(results, unemployment, by = c("year","month"))
+results = left_join(results, unemployment, by = c("year","month"))
 
 ```
 
@@ -98,7 +80,7 @@ results =
 # Problem 2
 
 ## import and clean mr. transh wheel
-```{r}
+```{r mr,message=FALSE}
 mr = read_excel("./data/trash.xlsx", 1) |>
   janitor::clean_names() |>
   select(-c(15,16)) |>
@@ -115,7 +97,7 @@ summary(mr)
 
 * delete this row whose dumpster is `NA`
 
-```{r}
+```{r drop}
 mr = drop_na(mr, dumpster)
 ```
 
@@ -167,13 +149,6 @@ summary(gwy)
 trash =  bind_rows(mr,gwy,pro)
 ```
 
-
-
-```{r}
-trash |> group_by(month) |> summarise(sum_trash=sum(weight_tons),
-            .groups = 'drop')
-```
-
 Let's talk about the Mr. Trash Wheel datasets. The `mr` data has `r nrow(mr)` observations and `r ncol(mr)` variables and tells us about the amount of trash the dumpster receives(measured by both weight `weight_tons` and volume `volume_cubic_yards`), fill time`month`,`year`,`date` and the categories of trash`r colnames(mr[,7:15])` for "Mr. Trash Wheel" from years `r range(mr$year)[1]` to `r range(mr$year)[2]`. It also tells us how many homes can be powered by the electricity produced by trash incineration. The `pro` data has `r nrow(pro)` observations and `r ncol(pro)` variables, ranging from years `r range(pro$year)[1]` to `r range(pro$year)[2]`. The `gwy` data has `r nrow(gwy)` observations and `r ncol(gwy)` variables ranging from years `r range(gwy$year)[1]` to `r range(gwy$year)[2]`.**The total weight of trash collected by Professor Trash Wheel was `r filter(trash, trash_wheel_name == "Professor Trash Wheel") |> pull(weight_tons) |> sum() |> round(2)`**. **The total number of cigarette butts collected by Gwynnda in July of 2021 was `r filter(trash, year == "2021", month == "July",trash_wheel_name == "Gwynnda Trash Wheel") |> pull(cigarette_butts) |> sum()`**.
 
 
@@ -197,7 +172,7 @@ table(baseline$sex,baseline$sex_labled)
 
 ```
 
-```{r}
+```{r baseline,message=FALSE}
 baseline = read_csv("./data/data_mci/MCI_baseline.csv",col_names = FALSE) |>
   slice(-c(1,2)) |>
   magrittr::set_colnames(c("ID","current_age","sex","education","apoe4","age_at_onset")) |>
@@ -223,7 +198,7 @@ prop.table(table(baseline$apoe4))
 
 ## import and clean amyloid data
 
-```{r}
+```{r amyloid, message=FALSE}
 amyloid = read_csv("./data/data_mci/mci_amyloid.csv",col_names = FALSE) |>
   slice(-c(1,2)) |>
   magrittr::set_colnames(c("ID","abeta_40/42_bsl","abeta_40/42_2","abeta_40/42_4","abeta_40/42_6","abeta_40/42_8")) |>
@@ -244,7 +219,7 @@ b <- right_join(baseline,amyloid,by="id")
 merge <- inner_join(baseline,amyloid,by="id")
 d <- full_join(baseline,amyloid,by="id")
 ```
-* there's 471 participants have both `baseline` and `amyloid` data; 8 participants only appear in `baseline` data; 16 participants only appear in `amyloid` data.
+* there's `r nrow(merge)` participants have both `baseline` and `amyloid` data; `r nrow(baseline)-nrow(merge)` participants only appear in `baseline` data; `r nrow(amyloid)-nrow(merge)` participants only appear in `amyloid` data.
 * `merge` dataset has `r nrow(merge)` observations and `r ncol(merge)` variables and gave us `r nrow(merge)` participants' demographic features and their Amyloid 40/42 ratio during follow-up time point.
 
 ```{r}
