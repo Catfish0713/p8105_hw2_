@@ -68,11 +68,11 @@ Join the datasets by merging `snp`into `pols`, and merging `unemployment` into t
 ```{r merge}
 snp = snp |> mutate(year = as.character(year))
 
-results = left_join(pols, snp, by = c("year","month"))
+results = full_join(pols, snp, by = c("year","month"))
 
 unemployment = unemployment |> mutate(year = as.character(year))
 
-results = left_join(results, unemployment, by = c("year","month"))
+results = full_join(results, unemployment, by = c("year","month"))
 
 ```
 
