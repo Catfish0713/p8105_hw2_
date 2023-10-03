@@ -75,7 +75,7 @@ unemployment = unemployment |> mutate(year = as.character(year))
 results = full_join(results, unemployment, by = c("year","month"))
 
 ```
-
+the problem didn't tell me to use which kind of join function, but there's observations only appear in separate datasets. So, I used `full_joint()` to avoid losing information.
 
 # Problem 2
 
@@ -108,7 +108,8 @@ mr = drop_na(mr, dumpster)
 
 ```{r}
 mr = mr |> mutate(homes_powered = (weight_tons*500)/30,
-                  trash_wheel_name = "Mr.Trash Wheel")
+                  trash_wheel_name = "Mr.Trash Wheel") |>
+            select(trash_wheel_name,everything())
 ```
 I can integrate the seperated codes into one using pipeline, but I am showing my process of thinking.
 
@@ -120,7 +121,8 @@ pro = read_excel("./data/trash.xlsx", 2) |>
   drop_na(dumpster) |>
   mutate(homes_powered = (weight_tons*500)/30,
          trash_wheel_name = "Professor Trash Wheel",
-         year = as.character(year))
+         year = as.character(year)) |>
+  select(trash_wheel_name,everything())
   
 
 str(pro)
@@ -129,13 +131,15 @@ summary(pro)
 
 
 
-gwy = read_excel("./data/trash.xlsx", 4) |>
+gwy = 
+  read_excel("./data/trash.xlsx", 4) |>
   janitor::clean_names() |>
   drop_na(dumpster) |>
   mutate(homes_powered = (weight_tons*500)/30,
          trash_wheel_name = "Gwynnda Trash Wheel",
          year = as.character(year),
-         month = ifelse(month == "july","July",month))
+         month = ifelse(month == "july","July", month)) |>
+  select(trash_wheel_name,everything())
 
 
 str(gwy)
