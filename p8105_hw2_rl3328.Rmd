@@ -210,7 +210,13 @@ baseline |>
 amyloid = read_csv("./data/data_mci/mci_amyloid.csv",col_names = FALSE) |>
   slice(-c(1,2)) |>
   magrittr::set_colnames(c("ID","abeta_40/42_bsl","abeta_40/42_2","abeta_40/42_4","abeta_40/42_6","abeta_40/42_8")) |>
-  janitor::clean_names()
+  janitor::clean_names() |>
+  pivot_longer(
+    -id,
+    names_to = "time", 
+    names_prefix = "abeta_40/42_",
+    values_to = "value"
+  )
   
   
 str(amyloid)
