@@ -220,7 +220,9 @@ baseline |>
 
 ```
 * When importing `baseline` data, I first drop the first row of the dataset(after memorizing the decoding rules) and then used the second row as column names. After cleaning the column names, I recoded `sex` and `apoe4`. Since `current_age` and `age_at_onset` are all character type in the original file. I converted them as numeric before comparing them to identify not MCI-free subjects at baseline and replace "." with `na`in age_at_onset. No duplicate `id` in `baseline` data.
+
 * The `baseline` data has `r nrow(baseline)` observations and `r ncol(baseline)` variables and tells us about the demographic features at baseline(sex, current_age,apoe4 status, education and MCI status during follow-up). 
+
 * `r nrow(baseline)` participants were recruited, and of these `r baseline |> filter(!is.na(age_at_onset)) |> nrow()` develop MCI. The average baseline age is `r baseline |> pull(current_age) |> mean()`. 30% of women in the study are APOE4 carriers.
 
 ## import and clean amyloid data
@@ -257,8 +259,8 @@ d <- full_join(baseline,amyloid,by="id")
 
 merge <- inner_join(baseline,amyloid_long, by = "id")
 ```
-* there's `r nrow(merge)` participants have both `baseline` and `amyloid` data; `r nrow(baseline)-nrow(merge)` participants only appear in `baseline` data; `r nrow(amyloid)-nrow(merge)` participants only appear in `amyloid` data.
-* `merge` dataset has `r nrow(merge)` observations and `r ncol(merge)` variables and gave us `r nrow(merge)` participants' demographic features and their Amyloid 40/42 ratio during follow-up time point.
+* there's `r nrow(c)` participants have both `baseline` and `amyloid` data; `r nrow(baseline)-nrow(c)` participants only appear in `baseline` data; `r nrow(amyloid)-nrow(c)` participants only appear in `amyloid` data.
+* `merge` dataset has `r nrow(merge)` observations and `r ncol(merge)` variables and gave us `r nrow(c)` participants' demographic features and their Amyloid 40/42 ratio during follow-up time point.
 * it's okay to use `baseline |> ... |> inner_join(x = _, y = amyloid) ` to make all fuctions in a whole code chunk, but I want to show my code in a step-by-step format.
 * I don't know why to first turn the `amyloid` into long format, it doesn't help answer the questions. But TA said in the discussion that it should be converted in long format.(although it helps make it more understandable for computer)
 
