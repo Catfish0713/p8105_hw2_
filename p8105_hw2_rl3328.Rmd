@@ -174,8 +174,10 @@ trash |>
 
 
 
-*Let's talk about the Mr. Trash Wheel datasets. The `mr` data has `r nrow(mr)` observations and `r ncol(mr)` variables and tells us about the amount of trash the dumpster receives(measured by both weight `weight_tons` and volume `volume_cubic_yards`), fill time`month`,`year`,`date` and the categories of trash`r colnames(mr[,7:15])` for "Mr. Trash Wheel" from years `r range(mr$year)[1]` to `r range(mr$year)[2]`. It also tells us how many homes can be powered by the electricity produced by trash incineration. The `pro` data has `r nrow(pro)` observations and `r ncol(pro)` variables, ranging from years `r range(pro$year)[1]` to `r range(pro$year)[2]`. The `gwy` data has `r nrow(gwy)` observations and `r ncol(gwy)` variables ranging from years `r range(gwy$year)[1]` to `r range(gwy$year)[2]`.
-*Over these years, the total weight of trash for January was the least, which wass 97.6 tons; the total weight of trash for June was the most, which was 375 tons, which suggests the positive relationship between trash weight and rainfall.
+* Let's talk about the Mr. Trash Wheel datasets. The `mr` data has `r nrow(mr)` observations and `r ncol(mr)` variables and tells us about the amount of trash the dumpster receives(measured by both weight `weight_tons` and volume `volume_cubic_yards`), fill time`month`,`year`,`date` and the categories of trash`r colnames(mr[,7:15])` for "Mr. Trash Wheel" from years `r range(mr$year)[1]` to `r range(mr$year)[2]`. It also tells us how many homes can be powered by the electricity produced by trash incineration. The `pro` data has `r nrow(pro)` observations and `r ncol(pro)` variables, ranging from years `r range(pro$year)[1]` to `r range(pro$year)[2]`. The `gwy` data has `r nrow(gwy)` observations and `r ncol(gwy)` variables ranging from years `r range(gwy$year)[1]` to `r range(gwy$year)[2]`.variable names are:`colnames(mr)`.
+
+* Over these years, the total weight of trash for January was the least, which wass 97.6 tons; the total weight of trash for June was the most, which was 375 tons, which suggests the positive relationship between trash weight and rainfall.
+
 * **The total weight of trash collected by Professor Trash Wheel was `r filter(trash, trash_wheel_name == "Professor Trash Wheel") |> pull(weight_tons) |> sum() |> round(2)`**. **The total number of cigarette butts collected by Gwynnda in July of 2021 was `r filter(trash, year == "2021", month == "July",trash_wheel_name == "Gwynnda Trash Wheel") |> pull(cigarette_butts) |> sum()`**.
 
 
@@ -222,9 +224,10 @@ baseline |>
   table()
 
 ```
+
 * When importing `baseline` data, I first drop the first row of the dataset(after memorizing the decoding rules) and then used the second row as column names. After cleaning the column names, I recoded `sex` and `apoe4`. Since `current_age` and `age_at_onset` are all character type in the original file. I converted them as numeric before comparing them to identify not MCI-free subjects at baseline and replace "." with `na`in age_at_onset. No duplicate `id` in `baseline` data.
 
-* The `baseline` data has `r nrow(baseline)` observations and `r ncol(baseline)` variables and tells us about the demographic features at baseline(sex, current_age,apoe4 status, education and MCI status during follow-up). 
+* The `baseline` data has `r nrow(baseline)` observations and `r ncol(baseline)` variables and tells us about the demographic features at baseline(`colnames(baseline)`). 
 
 * `r nrow(baseline)` participants were recruited, and of these `r baseline |> filter(!is.na(age_at_onset)) |> nrow()` develop MCI. The average baseline age is `r baseline |> pull(current_age) |> mean()`. 30% of women in the study are APOE4 carriers.
 
@@ -234,7 +237,9 @@ baseline |>
 amyloid = read_csv("./data/data_mci/mci_amyloid.csv",col_names = FALSE) |>
   slice(-c(1,2)) |>
   magrittr::set_colnames(c("ID","abeta_40/42_bsl","abeta_40/42_2","abeta_40/42_4","abeta_40/42_6","abeta_40/42_8")) |>
-  janitor::clean_names() 
+  janitor::clean_names() |>
+  mutate_at(c(2:6),as.numeric)
+  
 
 
 amyloid_long = amyloid|>
@@ -249,7 +254,7 @@ amyloid_long = amyloid|>
 str(amyloid)
 summary(amyloid)
 ```
-* When importing `baseline` data, I first drop the first row of the dataset(after memorizing the decoding rules) and then used the second row(modified a little) as column names. I found there's "Na" in follow-up columns, so I converted them into numeric so that some strings unable to be converted directly became `NA` . No duplicate `id` in the `amyloid` data.
+* When importing `baseline` data, I first drop the first row of the dataset(after memorizing the decoding rules) and then used the second row(modified a little) as column names. I found there's "Na" in follow-up columns, so I converted them into numeric so that some strings unable to be converted directly became `NA` . No duplicate `id` in the `amyloid` data.Then, I turn it into long format.
 
 ## check and combine
 
@@ -261,9 +266,17 @@ c <- inner_join(baseline,amyloid,by="id")
 d <- full_join(baseline,amyloid,by="id")
 
 merge <- inner_join(baseline,amyloid_long, by = "id")
+
+
+
+
+
+
+
 ```
 * there's `r nrow(c)` participants have both `baseline` and `amyloid` data; `r nrow(baseline)-nrow(c)` participants only appear in `baseline` data; `r nrow(amyloid)-nrow(c)` participants only appear in `amyloid` data.
 * `merge` dataset has `r nrow(merge)` observations and `r ncol(merge)` variables and gave us `r nrow(c)` participants' demographic features and their Amyloid 40/42 ratio during follow-up time point.
+* interesting point: the mean abeta 40/42 for apoe4 carrier at time8=`r c |> filter(apoe4=="APOE4 carrier") |>pull(abeta_40_42_8)|>mean(na.rm=T)`,whereas the mean abeta 40/42 for apoe4 carrier at time8=`r c |> filter(apoe4=="APOE4 non-carrier") |>pull(abeta_40_42_8)|>mean(na.rm=T)`.
 * it's okay to use `baseline |> ... |> inner_join(x = _, y = amyloid) ` to make all fuctions in a whole code chunk, but I want to show my code in a step-by-step format.
 * I don't know why to first turn the `amyloid` into long format, it doesn't help answer the questions. But TA said in the discussion that it should be converted in long format.(although it helps make it more understandable for computer)
 
